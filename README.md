@@ -29,3 +29,16 @@ open-source observability tools.
 
 ## Project Status
 🚧 Step 1: Project foundation and Terraform setup
+
+## Development Environment
+
+This project is developed and tested using **AWS Playground**,
+which provides temporary AWS credentials for hands-on practice.
+
+Due to playground limitations:
+- Terraform uses a local backend (state stored locally)
+- Managed AWS services (e.g. AMP, AMG) are not used
+- Infrastructure is designed to be production-ready but adapted for a sandbox environment
+
+Production-grade alternatives (remote backend, managed observability)
+are documented but not enabled.
