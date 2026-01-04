@@ -28,7 +28,7 @@ open-source observability tools.
 - Grafana dashboards and alerts
 
 ## Project Status
-🚧 Step 1: Project foundation and Terraform setup
+🚧 In Progress
 
 ## Development Environment
 
