@@ -27,7 +27,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t app .
+          docker build -t app ./app
           docker tag app:latest ${{ secrets.ECR_REPOSITORY_URL }}:latest
           docker push ${{ secrets.ECR_REPOSITORY_URL }}:latest
 
