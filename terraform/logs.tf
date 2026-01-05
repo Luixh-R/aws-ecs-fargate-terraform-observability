@@ -2,7 +2,7 @@ resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
 
   lifecycle {
-   prevent_destroy = true
+   prevent_destroy = false
   }
 
   tags = {
