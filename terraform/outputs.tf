@@ -50,4 +50,9 @@ output "github_actions_role_arn" {
   value = aws_iam_role.github_actions.arn
 }
 
+output "alb_url" {
+  description = "Public URL of the application load balancer"
+  value       = aws_lb.app.dns_name
+}
+
 data "aws_caller_identity" "current" {}
