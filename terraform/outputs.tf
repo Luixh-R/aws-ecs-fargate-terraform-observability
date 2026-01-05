@@ -33,3 +33,21 @@ output "ecs_task_role_arn" {
 output "ecs_log_group" {
   value = aws_cloudwatch_log_group.ecs.name
 }
+
+output "ecs_service_name" {
+  value = aws_ecs_service.app.name
+}
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.app.repository_url
+}
+
+output "aws_account_id" {
+  value = data.aws_caller_identity.current.account_id
+}
+
+output "github_actions_role_arn" {
+  value = aws_iam_role.github_actions.arn
+}
+
+data "aws_caller_identity" "current" {}
