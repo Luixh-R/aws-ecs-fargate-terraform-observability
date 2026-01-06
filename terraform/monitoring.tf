@@ -77,11 +77,27 @@ resource "aws_ecs_task_definition" "prometheus" {
       name  = "prometheus"
       image = "prom/prometheus:latest"
 
+      entryPoint = ["sh", "-c"]
+
+      command = [
+        <<-EOF
+        cat > /tmp/prometheus.yml <<'CONFIG'
+        global:
+          scrape_interval: 15s
+
+        scrape_configs:
+          - job_name: "ecs-app"
+            metrics_path: "/metrics"
+            static_configs:
+              - targets: ["${aws_lb.app.dns_name}:80"]
+        CONFIG
+
+        /bin/prometheus --config.file=/tmp/prometheus.yml
+        EOF
+      ]
+
       portMappings = [
-        {
-          containerPort = 9090
-          protocol      = "tcp"
-        }
+        { containerPort = 9090 }
       ]
 
       logConfiguration = {
@@ -95,6 +111,7 @@ resource "aws_ecs_task_definition" "prometheus" {
     }
   ])
 }
+
 
 resource "aws_ecs_service" "prometheus" {
   name            = "${var.project_name}-prometheus-service"
