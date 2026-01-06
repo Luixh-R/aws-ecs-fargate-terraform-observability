@@ -55,4 +55,14 @@ output "alb_url" {
   value       = aws_lb.app.dns_name
 }
 
+output "prometheus_url" {
+  description = "URL to access Prometheus"
+  value       = "http://${aws_lb.app.dns_name}/prometheus"
+}
+
+output "grafana_url" {
+  description = "URL to access Grafana"
+  value       = "http://${aws_lb.app.dns_name}/grafana"
+}
+
 data "aws_caller_identity" "current" {}
