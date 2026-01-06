@@ -7,14 +7,14 @@ resource "aws_cloudwatch_log_group" "grafana" {
 }
 
 resource "aws_lb_target_group" "prometheus" {
-  name        = "efs-prometheus-tg"
+  name        = "prometheus-tg"
   port        = 9090
   protocol    = "HTTP"
   vpc_id      = aws_vpc.this.id
   target_type = "ip"
 
   health_check {
-    path                = "/"
+    path                = "/-/healthy"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
@@ -24,7 +24,7 @@ resource "aws_lb_target_group" "prometheus" {
 }
 
 resource "aws_lb_target_group" "grafana" {
-  name        = "efs-grafana-tg"
+  name        = "grafana-tg"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.this.id
@@ -40,35 +40,25 @@ resource "aws_lb_target_group" "grafana" {
   }
 }
 
-resource "aws_lb_listener_rule" "prometheus" {
-  listener_arn = aws_lb_listener.app.arn
-  priority     = 10
+resource "aws_lb_listener" "prometheus" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 9090
+  protocol          = "HTTP"
 
-  action {
+  default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.prometheus.arn
   }
-
-  condition {
-    path_pattern {
-      values = ["/prometheus*"]
-    }
-  }
 }
 
-resource "aws_lb_listener_rule" "grafana" {
-  listener_arn = aws_lb_listener.app.arn
-  priority     = 20
+resource "aws_lb_listener" "grafana" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 3000
+  protocol          = "HTTP"
 
-  action {
+  default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.grafana.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/grafana*"]
-    }
   }
 }
 
@@ -94,13 +84,6 @@ resource "aws_ecs_task_definition" "prometheus" {
         }
       ]
 
-      environment = [
-        {
-          name  = "PROMETHEUS_TARGET"
-          value = "http://${aws_lb.app.dns_name}:80"
-        }
-      ]
-
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -121,9 +104,9 @@ resource "aws_ecs_service" "prometheus" {
   desired_count   = 1
 
   network_configuration {
-    subnets         = aws_subnet.private[*].id
-    security_groups = [aws_security_group.ecs.id]
-    assign_public_ip = true
+    subnets          = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -132,7 +115,7 @@ resource "aws_ecs_service" "prometheus" {
     container_port   = 9090
   }
 
-  depends_on = [aws_lb_listener_rule.prometheus]
+  depends_on = [aws_lb_listener.prometheus]
 }
 
 resource "aws_ecs_task_definition" "grafana" {
@@ -161,10 +144,6 @@ resource "aws_ecs_task_definition" "grafana" {
         {
           name  = "GF_SECURITY_ADMIN_PASSWORD"
           value = "admin"
-        },
-        {
-          name  = "GF_SERVER_ROOT_URL"
-          value = "http://${aws_lb.app.dns_name}/grafana"
         }
       ]
 
@@ -188,9 +167,9 @@ resource "aws_ecs_service" "grafana" {
   desired_count   = 1
 
   network_configuration {
-    subnets         = aws_subnet.private[*].id
-    security_groups = [aws_security_group.ecs.id]
-    assign_public_ip = true
+    subnets          = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -199,6 +178,6 @@ resource "aws_ecs_service" "grafana" {
     container_port   = 3000
   }
 
-  depends_on = [aws_lb_listener_rule.grafana]
+  depends_on = [aws_lb_listener.grafana]
 }
 
