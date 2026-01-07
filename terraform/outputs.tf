@@ -57,12 +57,12 @@ output "alb_url" {
 
 output "prometheus_url" {
   description = "URL to access Prometheus"
-  value       = "http://${aws_lb.app.dns_name}/prometheus"
+  value       = "http://${aws_lb.app.dns_name}:9090"
 }
 
 output "grafana_url" {
   description = "URL to access Grafana"
-  value       = "http://${aws_lb.app.dns_name}/grafana"
+  value       = "http://${aws_lb.app.dns_name}:3000"
 }
 
 data "aws_caller_identity" "current" {}
