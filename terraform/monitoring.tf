@@ -68,38 +68,29 @@ resource "aws_ecs_task_definition" "prometheus" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-
-  execution_role_arn = aws_iam_role.ecs_task_execution.arn
-  task_role_arn      = aws_iam_role.ecs_task_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
       name  = "prometheus"
       image = "prom/prometheus:latest"
-
       entryPoint = ["sh", "-c"]
-
       command = [
         <<-EOF
         cat > /tmp/prometheus.yml <<'CONFIG'
         global:
           scrape_interval: 15s
-
         scrape_configs:
           - job_name: "ecs-app"
             metrics_path: "/metrics"
             static_configs:
               - targets: ["${aws_lb.app.dns_name}:80"]
         CONFIG
-
         /bin/prometheus --config.file=/tmp/prometheus.yml
         EOF
       ]
-
-      portMappings = [
-        { containerPort = 9090 }
-      ]
-
+      portMappings = [{ containerPort = 9090 }]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -111,7 +102,6 @@ resource "aws_ecs_task_definition" "prometheus" {
     }
   ])
 }
-
 
 resource "aws_ecs_service" "prometheus" {
   name            = "${var.project_name}-prometheus-service"
@@ -141,29 +131,73 @@ resource "aws_ecs_task_definition" "grafana" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-
-  execution_role_arn = aws_iam_role.ecs_task_execution.arn
-  task_role_arn      = aws_iam_role.ecs_task_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
       name  = "grafana"
       image = "grafana/grafana:latest"
+      entryPoint = ["sh", "-c"]
+      command = [
+        <<-EOF
+        mkdir -p /etc/grafana/provisioning/datasources
+        mkdir -p /etc/grafana/provisioning/dashboards
 
-      portMappings = [
+        cat > /etc/grafana/provisioning/datasources/prometheus.yaml <<'DATASOURCE'
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            access: proxy
+            url: http://${aws_lb.app.dns_name}:9090
+            isDefault: true
+        DATASOURCE
+
+        cat > /etc/grafana/provisioning/dashboards/dashboards.yaml <<'DASHBOARDPROVIDER'
+        apiVersion: 1
+        providers:
+          - name: 'FastAPI App Dashboard'
+            orgId: 1
+            folder: ''
+            type: file
+            disableDeletion: false
+            updateIntervalSeconds: 10
+            options:
+              path: /etc/grafana/provisioning/dashboards
+        DASHBOARDPROVIDER
+
+        cat > /etc/grafana/provisioning/dashboards/fastapi-dashboard.json <<'DASHBOARD'
         {
-          containerPort = 3000
-          protocol      = "tcp"
+          "id": null,
+          "title": "FastAPI Request Count",
+          "panels": [
+            {
+              "type": "graph",
+              "title": "Total Requests",
+              "targets": [
+                { "expr": "app_requests_total", "refId": "A" }
+              ],
+              "xaxis": { "mode": "time" },
+              "yaxes": [
+                { "format": "short", "label": "requests", "logBase": 1 },
+                { "format": "short" }
+              ]
+            }
+          ],
+          "schemaVersion": 30,
+          "version": 1
         }
-      ]
+        DASHBOARD
 
+        /run.sh
+        EOF
+      ]
+      portMappings = [{ containerPort = 3000, protocol = "tcp" }]
       environment = [
-        {
-          name  = "GF_SECURITY_ADMIN_PASSWORD"
-          value = "admin"
-        }
+        { name = "GF_SECURITY_ADMIN_PASSWORD", value = "admin" },
+        { name = "GF_PATHS_PROVISIONING", value = "/etc/grafana/provisioning" }
       ]
-
       logConfiguration = {
         logDriver = "awslogs"
         options = {
