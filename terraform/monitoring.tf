@@ -173,15 +173,16 @@ resource "aws_ecs_task_definition" "grafana" {
           "title": "FastAPI Request Count",
           "panels": [
             {
-              "type": "graph",
+              "type": "table",
               "title": "Total Requests",
+              "gridPos": {
+                "h": 20,
+                "w": 24,
+                "x": 0,
+                "y": 0
+              },
               "targets": [
                 { "expr": "app_requests_total", "refId": "A" }
-              ],
-              "xaxis": { "mode": "time" },
-              "yaxes": [
-                { "format": "short", "label": "requests", "logBase": 1 },
-                { "format": "short" }
               ]
             }
           ],
