@@ -17,7 +17,6 @@ This project demonstrates how to build a production-grade container platform on 
 - **GitHub Actions** – CI/CD pipelines  
 - **Prometheus** – Metrics collection  
 - **Grafana** – Dashboards and alerting  
-- **Loki** – Centralized logging  
 
 ---
 
