@@ -101,23 +101,37 @@ terraform init
 terraform apply
 ```
 
-### 2. Build & Push Docker Image
+### 2. Build & Push Docker Image (via GitHub Actions)
 
-```bash
-cd app
-docker build -t <your-ecr-repo> .
-docker push <your-ecr-repo>
-```
+This project uses **GitHub Actions** to automatically build and push the Docker image to **Amazon ECR**, and deploy it to **ECS Fargate**.
 
-### 3. Deploy via GitHub Actions
+### Prerequisites
 
-Push your code to GitHub; the workflow `deploy.yml` will:
+After running **Terraform**, export the outputs and create the following **GitHub Repository Secrets**:
 
-- Build the Docker image  
-- Push to ECR  
-- Update ECS Fargate service  
+| Secret Name           | Description                                |
+|-----------------------|--------------------------------------------|
+| `AWS_ACCOUNT_ID`      | Your AWS account ID                        |
+| `AWS_ROLE_ARN`        | IAM role assumed by GitHub Actions         |
+| `ECR_REPOSITORY_URL`  | ECR repository URL (from Terraform output) |
+| `ECS_CLUSTER_NAME`    | ECS cluster name                           |
+| `ECS_SERVICE_NAME`    | ECS service name                           |
 
-### 4. Access Application & Observability
+These secrets are used by the CI/CD pipeline to authenticate with AWS, push images to ECR, and trigger ECS deployments.
+
+### How It Works
+
+- Push code changes to the repository
+- **GitHub Actions**:
+  - Authenticates to AWS using **OIDC**
+  - Builds the Docker image
+  - Pushes the image to **Amazon ECR**
+  - Updates the **ECS service** to deploy the new version
+
+No manual Docker commands are required once the secrets are configured.
+
+
+### 3. Access Application & Observability
 
 - **App URL:** via Application Load Balancer  
 - **Prometheus:** http://<alb-dns>:9090  
